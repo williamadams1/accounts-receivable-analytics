@@ -1,0 +1,63 @@
+$ Accrued Credit Loss :=
+VAR _Accrual_GroupA =
+    SUMX (
+        SUMMARIZE (
+            'AR Fact',
+            'AR Fact'[Aging Bucket],
+            "Base Amount",
+                SUMX (
+                    FILTER (
+                        'AR Fact',
+                        'AR Fact'[CounterpartyType] = "Primary"
+                            && NOT (
+                                'AR Fact'[BusinessUnit]
+                                    IN { "Group B Unit 1", "Group B Unit 2" }
+                            )
+                    ),
+                    'AR Fact'[AmountUSD]
+                )
+        ),
+        SWITCH (
+            TRUE (),
+            [Aging Bucket] = "Current",        [Base Amount] * 0.0045,
+            [Aging Bucket] = "1-60 Days",      [Base Amount] * 0.0078,
+            [Aging Bucket] = "61-90 Days",     [Base Amount] * 0.0078,
+            [Aging Bucket] = "91-120 Days",    [Base Amount] * 0.1111,
+            [Aging Bucket] = "121-180 Days",   [Base Amount] * 0.1111,
+            [Aging Bucket] = "181-270 Days",   [Base Amount] * 0.3133,
+            [Aging Bucket] = "271-365 Days",   [Base Amount] * 0.5037,
+            [Aging Bucket] = "365+ Days",      [Base Amount] * 1
+        )
+    )
+
+VAR _Accrual_GroupB =
+    SUMX (
+        SUMMARIZE (
+            'AR Fact',
+            'AR Fact'[Aging Bucket],
+            "Base Amount",
+                SUMX (
+                    FILTER (
+                        'AR Fact',
+                        'AR Fact'[CounterpartyType] = "Primary"
+                            && 'AR Fact'[BusinessUnit]
+                                IN { "Group B Unit 1", "Group B Unit 2" }
+                    ),
+                    'AR Fact'[AmountUSD]
+                )
+        ),
+        SWITCH (
+            TRUE (),
+            [Aging Bucket] = "Current",        [Base Amount] * 0.0022,
+            [Aging Bucket] = "1-60 Days",      [Base Amount] * 0.0028,
+            [Aging Bucket] = "61-90 Days",     [Base Amount] * 0.0028,
+            [Aging Bucket] = "91-120 Days",    [Base Amount] * 0.0536,
+            [Aging Bucket] = "121-180 Days",   [Base Amount] * 0.0536,
+            [Aging Bucket] = "181-270 Days",   [Base Amount] * 0.1876,
+            [Aging Bucket] = "271-365 Days",   [Base Amount] * 0.3465,
+            [Aging Bucket] = "365+ Days",      [Base Amount] * 1
+        )
+    )
+
+RETURN
+    _Accrual_GroupA + _Accrual_GroupB
